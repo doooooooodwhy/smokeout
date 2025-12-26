@@ -12,6 +12,7 @@
     #topbar{display:flex;justify-content:space-between;padding:8px}
     #arena{flex:1;display:flex;justify-content:space-around;align-items:center}
     .side{width:45%;height:80%;border:2px solid #555;border-radius:8px;padding:8px;overflow-y:auto}
+    .side h3{margin:4px 0}
     #chatbar{display:flex;padding:8px;background:#222}
     #chatbar input{flex:1;margin-right:8px}
     #shop{display:flex;gap:6px;flex-wrap:wrap;padding:8px;background:#333}
@@ -39,8 +40,8 @@
   </div>
 
   <div id="arena">
-    <div class="side" id="leftSide"><h3>Left</h3><ul id="leftChat"></ul></div>
-    <div class="side" id="rightSide"><h3>Right</h3><ul id="rightChat"></ul></div>
+    <div class="side" id="leftSide"><h3 id="leftName">Left</h3><ul id="leftChat"></ul></div>
+    <div class="side" id="rightSide"><h3 id="rightName">Right</h3><ul id="rightChat"></ul></div>
   </div>
 
   <div id="shop"></div>
@@ -53,6 +54,7 @@
 
 <script>
 let ws, mode, myName, myRole;
+let leftPlayer = "", rightPlayer = "";
 
 const prices = {extra_burn:50,mic_drop:30,taxes:120,reverse_roast:45,silent_mode:10,judges_favor:50,savage_mode:750};
 
@@ -68,8 +70,8 @@ document.querySelectorAll(".modeBtn").forEach(btn=>{
 function startGame(){
   myName = prompt("Enter nickname:");
   if(!myName) location.reload();
-  const roomId = "room"+Math.random().toString(36).slice(2); // random room
-  history.replaceState({}, "", "?room="+roomId); // pretty url
+  const roomId = "room"+Math.random().toString(36).slice(2);
+  history.replaceState({}, "", "?room="+roomId);
   const wsUrl = `${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws/${roomId}`;
   ws = new WebSocket(wsUrl);
   ws.onopen = () => {
@@ -79,20 +81,31 @@ function startGame(){
     const m = JSON.parse(e.data);
     if(m.type==="lobby"){
       myRole = m.players.includes(myName) ? "player" : "judge";
-      console.log("Joined as", myRole);
+    }
+    if(m.type==="new_match"){
+      leftPlayer = m.match[0];
+      rightPlayer = m.match[1];
+      document.getElementById("leftName").textContent = leftPlayer;
+      document.getElementById("rightName").textContent = rightPlayer;
+      document.getElementById("leftChat").innerHTML="";
+      document.getElementById("rightChat").innerHTML="";
+      updateTimer(m.time_left);
+    }
+    if(m.type==="tick"){
+      updateTimer(m.time_left);
     }
     if(m.type==="chat"){
-      const sideBox = document.getElementById(Math.random()<0.5?"leftChat":"rightChat");
+      const targetBox = (m.from === leftPlayer) ? document.getElementById("leftChat")
+                                                : document.getElementById("rightChat");
       const li = document.createElement("li");
       li.textContent = `${m.from}: ${m.text}`;
-      sideBox.appendChild(li);
+      targetBox.appendChild(li);
     }
     if(m.type==="bucks"){
       document.getElementById("bucks").textContent = m.value;
     }
-    if(m.type==="new_match"){
-      document.getElementById("leftChat").innerHTML="";
-      document.getElementById("rightChat").innerHTML="";
+    if(m.type==="stage"){
+      document.getElementById("stage").textContent = `Stage ${m.stage}`;
     }
   };
 
@@ -106,6 +119,11 @@ function sendRoast(){
   if(!txt) return;
   ws.send(JSON.stringify({type:"chat", text:txt}));
   document.getElementById("msgInput").value="";
+}
+
+function updateTimer(sec){
+  const s = sec % 60; const m = Math.floor(sec/60);
+  document.getElementById("timer").textContent = `${m}:${s.toString().padStart(2,"0")}`;
 }
 
 function buildShop(){
