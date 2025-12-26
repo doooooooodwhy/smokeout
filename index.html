@@ -1,86 +1,123 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <title>Smokeout</title>
   <style>
-    body{font-family:system-ui;background:#111;color:#eee;margin:0;display:flex;flex-direction:column;height:100vh}
-    #top{display:flex;justify-content:space-between;padding:8px}
+    html,body{margin:0;height:100%;background:#111;color:#eee;font-family:system-ui}
+    #modeSelect{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px}
+    .modeBtn{background:#222;border:2px solid #555;padding:12px 24px;border-radius:6px;cursor:pointer;font-size:18px}
+    .modeBtn:hover{background:#333}
+    #gameScreen{display:none;flex-direction:column;height:100%}
+    #topbar{display:flex;justify-content:space-between;padding:8px}
     #arena{flex:1;display:flex;justify-content:space-around;align-items:center}
-    .side{width:45%;height:80%;border:2px solid #555;border-radius:8px;padding:8px}
+    .side{width:45%;height:80%;border:2px solid #555;border-radius:8px;padding:8px;overflow-y:auto}
     #chatbar{display:flex;padding:8px;background:#222}
     #chatbar input{flex:1;margin-right:8px}
-    #shop{display:flex;gap:4px;flex-wrap:wrap;padding:8px;background:#333}
+    #shop{display:flex;gap:6px;flex-wrap:wrap;padding:8px;background:#333}
     .powerup{background:#444;border:1px solid #666;padding:4px 8px;border-radius:4px;cursor:pointer}
   </style>
 </head>
 <body>
-  <div id="top">
+
+<!-- MODE SELECT -->
+<div id="modeSelect">
+  <h2>Pick a mode</h2>
+  <button class="modeBtn" data-mode="1v1nj">1v1 (no judge)</button>
+  <button class="modeBtn" data-mode="1v1">1v1 + judge</button>
+  <button class="modeBtn" data-mode="2v2">2v2 + judge</button>
+  <button class="modeBtn" data-mode="3v3">3v3 + judge</button>
+  <button class="modeBtn" data-mode="4v4">4v4 + judge</button>
+</div>
+
+<!-- GAME -->
+<div id="gameScreen">
+  <div id="topbar">
     <span>Roastbucks: <b id="bucks">0</b></span>
     <span id="timer">1:30</span>
     <span id="stage">Stage 1</span>
   </div>
 
   <div id="arena">
-    <div class="side" id="left"><h3>Player 1</h3><ul id="leftChat"></ul></div>
-    <div class="side" id="right"><h3>Player 2</h3><ul id="rightChat"></ul></div>
+    <div class="side" id="leftSide"><h3>Left</h3><ul id="leftChat"></ul></div>
+    <div class="side" id="rightSide"><h3>Right</h3><ul id="rightChat"></ul></div>
   </div>
 
   <div id="shop"></div>
 
   <div id="chatbar">
-    <input id="msg" placeholder="Type your roast…" autocomplete="off"/>
-    <button id="send">Send</button>
+    <input id="msgInput" placeholder="Roast here…" autocomplete="off"/>
+    <button id="sendBtn">Send</button>
   </div>
+</div>
 
 <script>
-const urlParams = new URLSearchParams(window.location.search);
-const room = urlParams.get("room") || "default";
-const ws = new WebSocket(`wss://${location.hostname}/ws/${room}`);
+let ws, mode, myName, myRole;
 
-let myName = "", myRole = "";
-const powerups = ["extra_burn","mic_drop","taxes","reverse_roast","silent_mode","judges_favor","savage_mode"];
 const prices = {extra_burn:50,mic_drop:30,taxes:120,reverse_roast:45,silent_mode:10,judges_favor:50,savage_mode:750};
 
-ws.onopen = () => {
-  myName = prompt("Enter nickname:");
-  myRole = confirm("Click OK to be a PLAYER, Cancel to be a JUDGE") ? "player" : "judge";
-  ws.send(JSON.stringify({type:"join",name:myName,role:myRole}));
-};
-
-ws.onmessage = (ev) => {
-  const m = JSON.parse(ev.data);
-  if(m.type==="chat"){
-    const side = document.getElementById(m.side||"leftChat");
-    const li = document.createElement("li");
-    li.textContent = `${m.from}: ${m.text}`;
-    side.appendChild(li);
-  }
-  if(m.type==="bucks"){
-    document.getElementById("bucks").textContent = m.value;
-  }
-  if(m.type==="new_match"){
-    document.getElementById("leftChat").innerHTML="";
-    document.getElementById("rightChat").innerHTML="";
-  }
-};
-
-document.getElementById("send").onclick = () => {
-  const txt = document.getElementById("msg").value.trim();
-  if(!txt) return;
-  ws.send(JSON.stringify({type:"chat",text:txt}));
-  document.getElementById("msg").value="";
-};
-
-// quick shop
-const shop = document.getElementById("shop");
-powerups.forEach(pu=>{
-  const b = document.createElement("button");
-  b.className="powerup";
-  b.textContent = `${pu} (${prices[pu]})`;
-  b.onclick = () => ws.send(JSON.stringify({type:"buy_powerup",powerup:pu}));
-  shop.appendChild(b);
+document.querySelectorAll(".modeBtn").forEach(btn=>{
+  btn.onclick = () => {
+    mode = btn.dataset.mode;
+    document.getElementById("modeSelect").style.display="none";
+    document.getElementById("gameScreen").style.display="flex";
+    startGame();
+  };
 });
+
+function startGame(){
+  myName = prompt("Enter nickname:");
+  if(!myName) location.reload();
+  const roomId = "room"+Math.random().toString(36).slice(2); // random room
+  history.replaceState({}, "", "?room="+roomId); // pretty url
+  const wsUrl = `${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws/${roomId}`;
+  ws = new WebSocket(wsUrl);
+  ws.onopen = () => {
+    ws.send(JSON.stringify({type:"join_request", mode:mode, name:myName}));
+  };
+  ws.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if(m.type==="lobby"){
+      myRole = m.players.includes(myName) ? "player" : "judge";
+      console.log("Joined as", myRole);
+    }
+    if(m.type==="chat"){
+      const sideBox = document.getElementById(Math.random()<0.5?"leftChat":"rightChat");
+      const li = document.createElement("li");
+      li.textContent = `${m.from}: ${m.text}`;
+      sideBox.appendChild(li);
+    }
+    if(m.type==="bucks"){
+      document.getElementById("bucks").textContent = m.value;
+    }
+    if(m.type==="new_match"){
+      document.getElementById("leftChat").innerHTML="";
+      document.getElementById("rightChat").innerHTML="";
+    }
+  };
+
+  document.getElementById("sendBtn").onclick = sendRoast;
+  document.getElementById("msgInput").onkeyup = (e) => { if(e.key==="Enter") sendRoast(); };
+  buildShop();
+}
+
+function sendRoast(){
+  const txt = document.getElementById("msgInput").value.trim();
+  if(!txt) return;
+  ws.send(JSON.stringify({type:"chat", text:txt}));
+  document.getElementById("msgInput").value="";
+}
+
+function buildShop(){
+  const shop = document.getElementById("shop");
+  Object.entries(prices).forEach(([pu,price])=>{
+    const b = document.createElement("button");
+    b.className="powerup";
+    b.textContent = `${pu} (${price})`;
+    b.onclick = () => ws.send(JSON.stringify({type:"buy_powerup", powerup:pu}));
+    shop.appendChild(b);
+  });
+}
 </script>
 </body>
 </html>
