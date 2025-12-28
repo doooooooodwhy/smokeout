@@ -1,141 +1,803 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>Smokeout</title>
-  <style>
-    html,body{margin:0;height:100%;background:#111;color:#eee;font-family:system-ui}
-    #modeSelect{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px}
-    .modeBtn{background:#222;border:2px solid #555;padding:12px 24px;border-radius:6px;cursor:pointer;font-size:18px}
-    .modeBtn:hover{background:#333}
-    #gameScreen{display:none;flex-direction:column;height:100%}
-    #topbar{display:flex;justify-content:space-between;padding:8px}
-    #arena{flex:1;display:flex;justify-content:space-around;align-items:center}
-    .side{width:45%;height:80%;border:2px solid #555;border-radius:8px;padding:8px;overflow-y:auto}
-    .side h3{margin:4px 0}
-    #chatbar{display:flex;padding:8px;background:#222}
-    #chatbar input{flex:1;margin-right:8px}
-    #shop{display:flex;gap:6px;flex-wrap:wrap;padding:8px;background:#333}
-    .powerup{background:#444;border:1px solid #666;padding:4px 8px;border-radius:4px;cursor:pointer}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smokeout - The Ultimate Roast Battle Game</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://unpkg.com/splitting@1.0.6/dist/splitting.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/splitting@1.0.6/dist/splitting.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;400;700&family=Inter:wght@300;400;500;600;700&family=Russo+One&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a1a1a;
+            color: #f5f5f5;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            border-bottom: 2px solid #ff6b35;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #ff6b35;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #f5f5f5;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: #ff6b35;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #ff6b35;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            padding: 2rem;
+        }
+
+        .hero-title {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #ff6b35, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(255, 107, 53, 0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+
+        .hero-description {
+            font-size: 1rem;
+            color: #999;
+            max-width: 800px;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid #ff6b35;
+            border-radius: 10px;
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ff6b35;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+
+        /* Game Modes Section */
+        .game-modes {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #f5f5f5;
+        }
+
+        .modes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .mode-card {
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mode-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .mode-card:hover::before {
+            left: 100%;
+        }
+
+        .mode-card:hover {
+            border-color: #ff6b35;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.2);
+        }
+
+        .mode-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .mode-title {
+            font-family: 'Russo One', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            color: #ff6b35;
+        }
+
+        .mode-description {
+            color: #999;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .mode-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .mode-button {
+            background: linear-gradient(45deg, #ff6b35, #ff8c42);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .mode-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
+
+        /* Leaderboard Preview */
+        .leaderboard-preview {
+            background: rgba(26, 26, 26, 0.6);
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .leaderboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .leaderboard-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+
+        .view-all-link {
+            color: #ff6b35;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .view-all-link:hover {
+            color: #ff8c42;
+        }
+
+        .leaderboard-list {
+            list-style: none;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: rgba(0, 212, 255, 0.05);
+            border-left: 3px solid #00d4ff;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .leaderboard-item:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .player-rank {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-right: 1rem;
+            min-width: 30px;
+        }
+
+        .player-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .player-stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: #ff6b35;
+            display: block;
+        }
+
+        /* Instructions */
+        .instructions {
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid #00d4ff;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 3rem 0;
+        }
+
+        .instructions h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+        }
+
+        .instructions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .instruction-item {
+            padding: 1rem;
+            background: rgba(26, 26, 26, 0.5);
+            border-radius: 10px;
+        }
+
+        .instruction-item h4 {
+            color: #ff6b35;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .instruction-item p {
+            color: #999;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(26, 26, 26, 0.9);
+            border-top: 2px solid #333;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .footer p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hero {
+                margin-top: 60px;
+                padding: 1rem;
+            }
+            
+            .stats-bar {
+                gap: 1rem;
+            }
+            
+            .stat-item {
+                min-width: 100px;
+                padding: 0.8rem;
+            }
+            
+            .modes-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .mode-card {
+                padding: 1.5rem;
+            }
+            
+            .leaderboard-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .player-stats {
+                justify-content: space-between;
+                width: 100%;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Background Canvas */
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0.3;
+        }
+    </style>
+<base target="_blank">
 </head>
 <body>
+    <!-- Background Canvas -->
+    <div id="background-canvas"></div>
 
-<!-- MODE SELECT -->
-<div id="modeSelect">
-  <h2>Pick a mode</h2>
-  <button class="modeBtn" data-mode="1v1nj">1v1 (no judge)</button>
-  <button class="modeBtn" data-mode="1v1">1v1 + judge</button>
-  <button class="modeBtn" data-mode="2v2">2v2 + judge</button>
-  <button class="modeBtn" data-mode="3v3">3v3 + judge</button>
-  <button class="modeBtn" data-mode="4v4">4v4 + judge</button>
-</div>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">SMOKEOUT</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="battle.html">Battle</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="shop.html">Shop</a></li>
+            </ul>
+        </div>
+    </nav>
 
-<!-- GAME -->
-<div id="gameScreen">
-  <div id="topbar">
-    <span>Roastbucks: <b id="bucks">0</b></span>
-    <span id="timer">1:30</span>
-    <span id="stage">Stage 1</span>
-  </div>
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1 class="hero-title" data-splitting>SMOKEOUT</h1>
+        <p class="hero-subtitle">The Ultimate Roast Battle Championship</p>
+        <p class="hero-description">
+            Enter the arena where words become weapons and wit determines victory. 
+            Battle opponents in intense 1v1 to 4v4 roast competitions, earn Roastbucks, 
+            unlock powerful abilities, and climb the leaderboard to become the ultimate Roast Master.
+        </p>
 
-  <div id="arena">
-    <div class="side" id="leftSide"><h3 id="leftName">Left</h3><ul id="leftChat"></ul></div>
-    <div class="side" id="rightSide"><h3 id="rightName">Right</h3><ul id="rightChat"></ul></div>
-  </div>
+        <!-- Player Stats -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-value" id="roastbucks">0</span>
+                <div class="stat-label">Roastbucks</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="level">1</span>
+                <div class="stat-label">Level</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="total-roasts">0</span>
+                <div class="stat-label">Total Roasts</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="time-played">0h</span>
+                <div class="stat-label">Time Played</div>
+            </div>
+        </div>
+    </section>
 
-  <div id="shop"></div>
+    <!-- Game Modes -->
+    <section class="game-modes">
+        <h2 class="section-title">Choose Your Battle</h2>
+        
+        <div class="modes-grid">
+            <!-- 1v1 with Judge -->
+            <div class="mode-card fade-in-up" data-mode="1v1-judge">
+                <span class="mode-icon">⚔️</span>
+                <h3 class="mode-title">1v1 with Judge</h3>
+                <p class="mode-description">
+                    Classic duel format with a neutral judge deciding the winner. 
+                    Perfect for testing your individual roasting skills.
+                </p>
+                <div class="mode-details">
+                    <span>Players: 2</span>
+                    <span>Judges: 1</span>
+                </div>
+                <button class="mode-button" data-mode="1v1-judge">Start Battle</button>
+            </div>
 
-  <div id="chatbar">
-    <input id="msgInput" placeholder="Roast here…" autocomplete="off"/>
-    <button id="sendBtn">Send</button>
-  </div>
-</div>
+            <!-- 1v1 No Judge -->
+            <div class="mode-card fade-in-up" data-mode="1v1-no-judge">
+                <span class="mode-icon">🔥</span>
+                <h3 class="mode-title">1v1 No Judge</h3>
+                <p class="mode-description">
+                    Pure skill matchup with automatic scoring. 
+                    No judges, just you and your opponent in a battle of wits.
+                </p>
+                <div class="mode-details">
+                    <span>Players: 2</span>
+                    <span>Auto Scoring</span>
+                </div>
+                <button class="mode-button" data-mode="1v1-no-judge">Start Battle</button>
+            </div>
 
-<script>
-let ws, mode, myName, myRole;
-let leftPlayer = "", rightPlayer = "";
+            <!-- 2v2 -->
+            <div class="mode-card fade-in-up" data-mode="2v2">
+                <span class="mode-icon">👥</span>
+                <h3 class="mode-title">2v2 Team Battle</h3>
+                <p class="mode-description">
+                    Team up with a partner and coordinate your roasting strategy. 
+                    Three judges will determine the victors.
+                </p>
+                <div class="mode-details">
+                    <span>Players: 4</span>
+                    <span>Judges: 3</span>
+                </div>
+                <button class="mode-button" data-mode="2v2">Start Battle</button>
+            </div>
 
-const prices = {extra_burn:50,mic_drop:30,taxes:120,reverse_roast:45,silent_mode:10,judges_favor:50,savage_mode:750};
+            <!-- 3v3 -->
+            <div class="mode-card fade-in-up" data-mode="3v3">
+                <span class="mode-icon">⚡</span>
+                <h3 class="mode-title">3v3 Squad War</h3>
+                <p class="mode-description">
+                    Larger teams mean more creative combinations and strategic depth. 
+                    Four judges ensure fair evaluation.
+                </p>
+                <div class="mode-details">
+                    <span>Players: 6</span>
+                    <span>Judges: 4</span>
+                </div>
+                <button class="mode-button" data-mode="3v3">Start Battle</button>
+            </div>
 
-document.querySelectorAll(".modeBtn").forEach(btn=>{
-  btn.onclick = () => {
-    mode = btn.dataset.mode;
-    document.getElementById("modeSelect").style.display="none";
-    document.getElementById("gameScreen").style.display="flex";
-    startGame();
-  };
-});
+            <!-- 4v4 -->
+            <div class="mode-card fade-in-up" data-mode="4v4">
+                <span class="mode-icon">🌟</span>
+                <h3 class="mode-title">4v4 Championship</h3>
+                <p class="mode-description">
+                    The ultimate team battle experience. Coordinate with three teammates 
+                    against five judges for maximum glory.
+                </p>
+                <div class="mode-details">
+                    <span>Players: 8</span>
+                    <span>Judges: 5</span>
+                </div>
+                <button class="mode-button" data-mode="4v4">Start Battle</button>
+            </div>
+        </div>
 
-function startGame(){
-  myName = prompt("Enter nickname:");
-  if(!myName) location.reload();
-  const roomId = "room"+Math.random().toString(36).slice(2);
-  history.replaceState({}, "", "?room="+roomId);
-  const wsUrl = `${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws/${roomId}`;
-  ws = new WebSocket(wsUrl);
-  ws.onopen = () => {
-    ws.send(JSON.stringify({type:"join_request", mode:mode, name:myName}));
-  };
-  ws.onmessage = (e) => {
-    const m = JSON.parse(e.data);
-    if(m.type==="lobby"){
-      myRole = m.players.includes(myName) ? "player" : "judge";
-    }
-    if(m.type==="new_match"){
-      leftPlayer = m.match[0];
-      rightPlayer = m.match[1];
-      document.getElementById("leftName").textContent = leftPlayer;
-      document.getElementById("rightName").textContent = rightPlayer;
-      document.getElementById("leftChat").innerHTML="";
-      document.getElementById("rightChat").innerHTML="";
-      updateTimer(m.time_left);
-    }
-    if(m.type==="tick"){
-      updateTimer(m.time_left);
-    }
-    if(m.type==="chat"){
-      const targetBox = (m.from === leftPlayer) ? document.getElementById("leftChat")
-                                                : document.getElementById("rightChat");
-      const li = document.createElement("li");
-      li.textContent = `${m.from}: ${m.text}`;
-      targetBox.appendChild(li);
-    }
-    if(m.type==="bucks"){
-      document.getElementById("bucks").textContent = m.value;
-    }
-    if(m.type==="stage"){
-      document.getElementById("stage").textContent = `Stage ${m.stage}`;
-    }
-  };
+        <!-- Leaderboard Preview -->
+        <div class="leaderboard-preview">
+            <div class="leaderboard-header">
+                <h3 class="leaderboard-title">🏆 Top Roasters</h3>
+                <a href="leaderboard.html" class="view-all-link">View All →</a>
+            </div>
+            <ul class="leaderboard-list" id="leaderboard-preview">
+                <!-- Leaderboard items will be populated by JavaScript -->
+            </ul>
+        </div>
 
-  document.getElementById("sendBtn").onclick = sendRoast;
-  document.getElementById("msgInput").onkeyup = (e) => { if(e.key==="Enter") sendRoast(); };
-  buildShop();
-}
+        <!-- Instructions -->
+        <div class="instructions">
+            <h3>🎮 How to Play</h3>
+            <div class="instructions-grid">
+                <div class="instruction-item">
+                    <h4>Choose Your Mode</h4>
+                    <p>Select from 1v1, 2v2, 3v3, or 4v4 battles. Each mode offers unique strategic opportunities.</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>Type Your Roasts</h4>
+                    <p>You have 1:30 per turn to craft the perfect roast. Be quick, be clever, be devastating.</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>Earn Roastbucks</h4>
+                    <p>Every roast earns you 1 Roastbuck. Win games for 30 Roastbucks bonus. Level up every 15 Roastbucks.</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>Buy Power-ups</h4>
+                    <p>Spend Roastbucks on game-changing abilities like Extra Burn, Mic Drop, and Savage Roast Mode.</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>Climb the Ranks</h4>
+                    <p>Compete on the global leaderboard for Total Roasts, Roastbucks earned, and Time Played.</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>Win the Championship</h4>
+                    <p>Survive elimination brackets and become the ultimate Smokeout champion!</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-function sendRoast(){
-  const txt = document.getElementById("msgInput").value.trim();
-  if(!txt) return;
-  ws.send(JSON.stringify({type:"chat", text:txt}));
-  document.getElementById("msgInput").value="";
-}
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 Smokeout Game. Ready to roast?</p>
+    </footer>
 
-function updateTimer(sec){
-  const s = sec % 60; const m = Math.floor(sec/60);
-  document.getElementById("timer").textContent = `${m}:${s.toString().padStart(2,"0")}`;
-}
+    <!-- Main JavaScript -->
+    <script src="main.js"></script>
+    
+    <script>
+        // Initialize page animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate title splitting
+            Splitting();
+            
+            // Animate title letters
+            anime({
+                targets: '.hero-title .char',
+                translateY: [-100, 0],
+                opacity: [0, 1],
+                easing: 'easeOutExpo',
+                duration: 1400,
+                delay: (el, i) => 100 + 30 * i
+            });
 
-function buildShop(){
-  const shop = document.getElementById("shop");
-  Object.entries(prices).forEach(([pu,price])=>{
-    const b = document.createElement("button");
-    b.className="powerup";
-    b.textContent = `${pu} (${price})`;
-    b.onclick = () => ws.send(JSON.stringify({type:"buy_powerup", powerup:pu}));
-    shop.appendChild(b);
-  });
-}
-</script>
+            // Animate mode cards on scroll
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.mode-card').forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(card);
+            });
+
+            // Populate leaderboard preview
+            populateLeaderboardPreview();
+            
+            // Update player stats
+            updatePlayerStats();
+        });
+
+        function populateLeaderboardPreview() {
+            const leaderboardData = [
+                { name: 'RoastMaster', roasts: 150, roastbucks: 2500, timePlayed: 7200 },
+                { name: 'BurnKing', roasts: 120, roastbucks: 2100, timePlayed: 6300 },
+                { name: 'SavageQueen', roasts: 95, roastbucks: 1800, timePlayed: 5400 },
+                { name: 'FireStarter', roasts: 80, roastbucks: 1500, timePlayed: 4500 },
+                { name: 'RoastLegend', roasts: 65, roastbucks: 1200, timePlayed: 3600 }
+            ];
+
+            const leaderboardList = document.getElementById('leaderboard-preview');
+            leaderboardList.innerHTML = '';
+
+            leaderboardData.slice(0, 5).forEach((player, index) => {
+                const item = document.createElement('li');
+                item.className = 'leaderboard-item';
+                item.innerHTML = `
+                    <div style="display: flex; align-items: center;">
+                        <span class="player-rank">#${index + 1}</span>
+                        <span class="player-name">${player.name}</span>
+                    </div>
+                    <div class="player-stats">
+                        <div class="stat">
+                            <span class="stat-value">${player.roasts}</span>
+                            <span>Roasts</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">${player.roastbucks}</span>
+                            <span>RB</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">${Math.floor(player.timePlayed / 3600)}h</span>
+                            <span>Time</span>
+                        </div>
+                    </div>
+                `;
+                leaderboardList.appendChild(item);
+            });
+        }
+
+        function updatePlayerStats() {
+            // Load player data from localStorage
+            const playerData = JSON.parse(localStorage.getItem('smokeout-player-data') || '{}');
+            
+            document.getElementById('roastbucks').textContent = playerData.roastbucks || 0;
+            document.getElementById('level').textContent = playerData.level || 1;
+            document.getElementById('total-roasts').textContent = playerData.totalRoasts || 0;
+            
+            const timePlayed = playerData.timePlayed || 0;
+            const hours = Math.floor(timePlayed / 3600);
+            document.getElementById('time-played').textContent = `${hours}h`;
+        }
+
+        // Mode selection handlers
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('mode-button')) {
+                const mode = e.target.dataset.mode;
+                if (mode) {
+                    // Store selected mode
+                    localStorage.setItem('selected-game-mode', mode);
+                    // Navigate to battle page
+                    window.location.href = 'battle.html';
+                }
+            }
+        });
+
+        // Add hover effects to mode cards
+        document.querySelectorAll('.mode-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                anime({
+                    targets: this,
+                    scale: 1.02,
+                    duration: 300,
+                    easing: 'easeOutQuart'
+                });
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                anime({
+                    targets: this,
+                    scale: 1,
+                    duration: 300,
+                    easing: 'easeOutQuart'
+                });
+            });
+        });
+    </script>
 </body>
 </html>
