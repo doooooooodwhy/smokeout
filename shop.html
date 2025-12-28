@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power-up Shop - Smokeout</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://unpkg.com/splitting@1.0.6/dist/splitting.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/splitting@1.0.6/dist/splitting.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;400;700&family=Inter:wght@300;400;500;600;700&family=Russo+One&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a1a1a;
+            color: #f5f5f5;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            border-bottom: 2px solid #ff6b35;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #ff6b35;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #f5f5f5;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: #ff6b35;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #ff6b35;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 80px;
+            padding: 2rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .page-title {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #ff6b35, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 1.2rem;
+            color: #999;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Currency Display */
+        .currency-display {
+            background: rgba(255, 107, 53, 0.1);
+            border: 2px solid #ff6b35;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .currency-amount {
+            font-family: 'Orbitron', monospace;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #ff6b35;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+        }
+
+        .currency-label {
+            font-size: 1.2rem;
+            color: #999;
+            margin-bottom: 1rem;
+        }
+
+        .currency-description {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Shop Categories */
+        .shop-categories {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 3rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .category-button {
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid #333;
+            color: #f5f5f5;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .category-button:hover {
+            border-color: #ff6b35;
+            background: rgba(255, 107, 53, 0.1);
+        }
+
+        .category-button.active {
+            border-color: #ff6b35;
+            background: linear-gradient(45deg, #ff6b35, #ff8c42);
+            color: white;
+        }
+
+        /* Power-ups Grid */
+        .powerups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .powerup-card {
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid #333;
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .powerup-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .powerup-card:hover::before {
+            left: 100%;
+        }
+
+        .powerup-card:hover {
+            border-color: #ff6b35;
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(255, 107, 53, 0.3);
+        }
+
+        .powerup-card.owned {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .powerup-card.owned:hover {
+            border-color: #00d4ff;
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .powerup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .powerup-info {
+            flex: 1;
+        }
+
+        .powerup-name {
+            font-family: 'Russo One', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #ff6b35;
+            margin-bottom: 0.5rem;
+        }
+
+        .powerup-type {
+            background: rgba(255, 107, 53, 0.2);
+            color: #ff6b35;
+            padding: 0.3rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .powerup-price {
+            text-align: right;
+        }
+
+        .price-amount {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ff6b35;
+            display: block;
+        }
+
+        .price-label {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .powerup-description {
+            color: #999;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .powerup-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #00d4ff;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 0.2rem;
+        }
+
+        .powerup-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .purchase-button {
+            flex: 1;
+            background: linear-gradient(45deg, #ff6b35, #ff8c42);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .purchase-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
+
+        .purchase-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .use-button {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            min-width: 80px;
+        }
+
+        .use-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+        }
+
+        .quantity-indicator {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* Inventory Section */
+        .inventory-section {
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid #00d4ff;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .inventory-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .inventory-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #00d4ff;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .inventory-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .inventory-item-name {
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 0.5rem;
+        }
+
+        .inventory-item-quantity {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ff6b35;
+        }
+
+        /* Special Offers */
+        .special-offers {
+            background: rgba(255, 107, 53, 0.1);
+            border: 2px solid #ff6b35;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .special-offers-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ff6b35;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .offers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .offer-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #ff6b35;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .offer-card::before {
+            content: 'LIMITED TIME';
+            position: absolute;
+            top: 10px;
+            right: -30px;
+            background: #ff073a;
+            color: white;
+            padding: 0.3rem 3rem;
+            transform: rotate(45deg);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .offer-title {
+            font-family: 'Russo One', sans-serif;
+            font-size: 1.3rem;
+            color: #ff6b35;
+            margin-bottom: 1rem;
+        }
+
+        .offer-description {
+            color: #999;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .offer-price {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .sale-price {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ff6b35;
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(26, 26, 26, 0.9);
+            border-top: 2px solid #333;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .footer p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .shop-categories {
+                gap: 0.5rem;
+            }
+            
+            .category-button {
+                padding: 0.8rem 1.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .powerups-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .powerup-card {
+                padding: 1.5rem;
+            }
+            
+            .powerup-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .powerup-price {
+                text-align: left;
+            }
+            
+            .powerup-actions {
+                flex-direction: column;
+            }
+            
+            .inventory-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Purchase Notification */
+        .purchase-notification {
+            position: fixed;
+            top: 100px;
+            right: 2rem;
+            background: rgba(0, 212, 255, 0.9);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            z-index: 1500;
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .purchase-notification.show {
+            transform: translateX(0);
+        }
+
+        /* Background Canvas */
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0.2;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <!-- Background Canvas -->
+    <div id="background-canvas"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">SMOKEOUT</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="battle.html">Battle</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="shop.html">Shop</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title" data-splitting>POWER-UP SHOP</h1>
+            <p class="page-subtitle">
+                Enhance your roasting abilities with game-changing power-ups and dominate the competition
+            </p>
+        </div>
+
+        <!-- Currency Display -->
+        <div class="currency-display">
+            <div class="currency-amount" id="roastbucks-amount">0</div>
+            <div class="currency-label">Roastbucks Available</div>
+            <div class="currency-description">Earn Roastbucks by sending roasts and winning battles</div>
+        </div>
+
+        <!-- Shop Categories -->
+        <div class="shop-categories">
+            <button class="category-button active" data-category="all">All Items</button>
+            <button class="category-button" data-category="offensive">Offensive</button>
+            <button class="category-button" data-category="defensive">Defensive</button>
+            <button class="category-button" data-category="utility">Utility</button>
+            <button class="category-button" data-category="ultimate">Ultimate</button>
+        </div>
+
+        <!-- Power-ups Grid -->
+        <div class="powerups-grid" id="powerups-grid">
+            <!-- Power-up cards will be populated by JavaScript -->
+        </div>
+
+        <!-- Inventory Section -->
+        <div class="inventory-section">
+            <h2 class="inventory-title">Your Inventory</h2>
+            <div class="inventory-grid" id="inventory-grid">
+                <div class="inventory-item">
+                    <div class="inventory-item-name">No items yet</div>
+                    <div class="inventory-item-quantity">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Special Offers -->
+        <div class="special-offers">
+            <h2 class="special-offers-title">🔥 Special Offers</h2>
+            <div class="offers-grid">
+                <div class="offer-card">
+                    <h3 class="offer-title">Starter Pack</h3>
+                    <p class="offer-description">Perfect for beginners! Get 3 essential power-ups to start your journey.</p>
+                    <div class="offer-price">
+                        <span class="original-price">120 RB</span>
+                        <span class="sale-price">80 RB</span>
+                    </div>
+                    <button class="purchase-button" onclick="purchaseOffer('starter')">Buy Pack</button>
+                </div>
+                <div class="offer-card">
+                    <h3 class="offer-title">Savage Bundle</h3>
+                    <p class="offer-description">Unleash maximum devastation with this offensive power-up collection.</p>
+                    <div class="offer-price">
+                        <span class="original-price">500 RB</span>
+                        <span class="sale-price">350 RB</span>
+                    </div>
+                    <button class="purchase-button" onclick="purchaseOffer('savage')">Buy Pack</button>
+                </div>
+                <div class="offer-card">
+                    <h3 class="offer-title">Ultimate Upgrade</h3>
+                    <p class="offer-description">Get the legendary Savage Roast Mode at a discounted price!</p>
+                    <div class="offer-price">
+                        <span class="original-price">750 RB</span>
+                        <span class="sale-price">600 RB</span>
+                    </div>
+                    <button class="purchase-button" onclick="purchaseOffer('ultimate')">Buy Pack</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 Smokeout Game. Spend wisely, roast mightily!</p>
+    </footer>
+
+    <!-- Main JavaScript -->
+    <script src="main.js"></script>
+    
+    <script>
+        // Shop page functionality
+        class ShopPage {
+            constructor() {
+                this.currentCategory = 'all';
+                this.roastbucks = 0;
+                this.inventory = {};
+                this.powerUps = this.initializePowerUps();
+                this.initializePage();
+            }
+
+            initializePowerUps() {
+                return [
+                    {
+                        id: 'extra-burn',
+                        name: 'Extra Burn',
+                        type: 'offensive',
+                        cost: 50,
+                        description: 'Doubles all roastbucks earned for one round. Perfect for maximizing your gains during intense battles.',
+                        stats: {
+                            multiplier: '2x',
+                            duration: '1 Round'
+                        },
+                        icon: '🔥'
+                    },
+                    {
+                        id: 'mic-drop',
+                        name: 'Mic Drop',
+                        type: 'offensive',
+                        cost: 30,
+                        description: 'Skip your opponent\'s turn and go straight to your response. Show them who\'s boss!',
+                        stats: {
+                            effect: 'Skip Turn',
+                            cooldown: 'None'
+                        },
+                        icon: '🎤'
+                    },
+                    {
+                        id: 'extra-line',
+                        name: 'Extra Line',
+                        type: 'utility',
+                        cost: 30,
+                        description: 'Type two lines simultaneously for devastating combo roasts that leave opponents speechless.',
+                        stats: {
+                            lines: '2',
+                            duration: '1 Turn'
+                        },
+                        icon: '✍️'
+                    },
+                    {
+                        id: 'divider',
+                        name: 'Divider',
+                        type: 'defensive',
+                        cost: 65,
+                        description: 'Halves your opponent\'s roastbucks earned for that round. Strategic defense at its finest.',
+                        stats: {
+                            reduction: '50%',
+                            duration: '1 Round'
+                        },
+                        icon: '✂️'
+                    },
+                    {
+                        id: 'judge-bias',
+                        name: 'Judge Bias',
+                        type: 'utility',
+                        cost: 45,
+                        description: 'Force one judge vote in your favor during the 15-second intermission. Every vote counts!',
+                        stats: {
+                            votes: '+1',
+                            timing: 'Intermission'
+                        },
+                        icon: '⚖️'
+                    },
+                    {
+                        id: 'reverse-roast',
+                        name: 'Reverse Roast',
+                        type: 'offensive',
+                        cost: 20,
+                        description: 'Make your opponent type their own roast against them. Psychological warfare at its peak!',
+                        stats: {
+                            effect: 'Role Reversal',
+                            timing: 'Pre-emptive'
+                        },
+                        icon: '🔄'
+                    },
+                    {
+                        id: 'savage-roast-mode',
+                        name: 'Savage Roast Mode',
+                        type: 'ultimate',
+                        cost: 750,
+                        description: 'The ultimate combo: 3.5x earnings, 3 skips, reverse roast, +2 judge votes, and halves opponent earnings. Total domination!',
+                        stats: {
+                            multiplier: '3.5x',
+                            skips: '3',
+                            duration: '3 Turns'
+                        },
+                        icon: '💀'
+                    }
+                ];
+            }
+
+            initializePage() {
+                this.loadPlayerData();
+                this.setupEventListeners();
+                this.displayPowerUps();
+                this.updateInventory();
+                this.animateElements();
+            }
+
+            loadPlayerData() {
+                const playerData = JSON.parse(localStorage.getItem('smokeout-player-data') || '{}');
+                this.roastbucks = playerData.roastbucks || 0;
+                
+                // Load inventory
+                const savedInventory = localStorage.getItem('smokeout-player-inventory');
+                this.inventory = savedInventory ? JSON.parse(savedInventory) : {};
+                
+                // Update currency display
+                document.getElementById('roastbucks-amount').textContent = this.roastbucks.toLocaleString();
+            }
+
+            setupEventListeners() {
+                // Category buttons
+                document.querySelectorAll('.category-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        this.switchCategory(e.target.dataset.category);
+                    });
+                });
+            }
+
+            switchCategory(category) {
+                // Update active button
+                document.querySelectorAll('.category-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[data-category="${category}"]`).classList.add('active');
+
+                this.currentCategory = category;
+                this.displayPowerUps();
+            }
+
+            displayPowerUps() {
+                const grid = document.getElementById('powerups-grid');
+                grid.innerHTML = '';
+
+                const filteredPowerUps = this.currentCategory === 'all' 
+                    ? this.powerUps 
+                    : this.powerUps.filter(pu => pu.type === this.currentCategory);
+
+                filteredPowerUps.forEach((powerUp, index) => {
+                    const card = this.createPowerUpCard(powerUp);
+                    card.style.animationDelay = `${index * 0.1}s`;
+                    grid.appendChild(card);
+                });
+            }
+
+            createPowerUpCard(powerUp) {
+                const card = document.createElement('div');
+                const owned = this.inventory[powerUp.id] || 0;
+                
+                card.className = `powerup-card fade-in-up ${owned > 0 ? 'owned' : ''}`;
+                card.innerHTML = `
+                    <div class="powerup-header">
+                        <div class="powerup-info">
+                            <h3 class="powerup-name">${powerUp.icon} ${powerUp.name}</h3>
+                            <span class="powerup-type">${powerUp.type.toUpperCase()}</span>
+                        </div>
+                        <div class="powerup-price">
+                            <span class="price-amount">${powerUp.cost}</span>
+                            <span class="price-label">ROASTBUCKS</span>
+                        </div>
+                    </div>
+                    
+                    <p class="powerup-description">${powerUp.description}</p>
+                    
+                    <div class="powerup-stats">
+                        ${Object.entries(powerUp.stats).map(([key, value]) => `
+                            <div class="stat-item">
+                                <span class="stat-value">${value}</span>
+                                <span class="stat-label">${key.charAt(0).toUpperCase() + key.slice(1)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="powerup-actions">
+                        <button class="purchase-button" 
+                                onclick="shopPage.purchasePowerUp('${powerUp.id}')"
+                                ${this.roastbucks < powerUp.cost ? 'disabled' : ''}>
+                            ${owned > 0 ? 'Buy More' : 'Purchase'}
+                        </button>
+                        ${owned > 0 ? `
+                            <div class="quantity-indicator">${owned} Owned</div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                return card;
+            }
+
+            purchasePowerUp(powerUpId) {
+                const powerUp = this.powerUps.find(pu => pu.id === powerUpId);
+                if (!powerUp || this.roastbucks < powerUp.cost) return;
+
+                // Deduct roastbucks
+                this.roastbucks -= powerUp.cost;
+                
+                // Add to inventory
+                this.inventory[powerUpId] = (this.inventory[powerUpId] || 0) + 1;
+                
+                // Save data
+                this.savePlayerData();
+                
+                // Update UI
+                document.getElementById('roastbucks-amount').textContent = this.roastbucks.toLocaleString();
+                this.displayPowerUps();
+                this.updateInventory();
+                
+                // Show notification
+                this.showPurchaseNotification(`Purchased ${powerUp.name}!`);
+            }
+
+            updateInventory() {
+                const grid = document.getElementById('inventory-grid');
+                grid.innerHTML = '';
+
+                const inventoryItems = Object.entries(this.inventory);
+                
+                if (inventoryItems.length === 0) {
+                    grid.innerHTML = `
+                        <div class="inventory-item">
+                            <div class="inventory-item-name">No items yet</div>
+                            <div class="inventory-item-quantity">0</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                inventoryItems.forEach(([powerUpId, quantity]) => {
+                    const powerUp = this.powerUps.find(pu => pu.id === powerUpId);
+                    if (!powerUp) return;
+
+                    const item = document.createElement('div');
+                    item.className = 'inventory-item';
+                    item.innerHTML = `
+                        <div class="inventory-item-name">${powerUp.icon} ${powerUp.name}</div>
+                        <div class="inventory-item-quantity">${quantity}</div>
+                    `;
+                    grid.appendChild(item);
+                });
+            }
+
+            savePlayerData() {
+                // Save roastbucks
+                const playerData = JSON.parse(localStorage.getItem('smokeout-player-data') || '{}');
+                playerData.roastbucks = this.roastbucks;
+                localStorage.setItem('smokeout-player-data', JSON.stringify(playerData));
+                
+                // Save inventory
+                localStorage.setItem('smokeout-player-inventory', JSON.stringify(this.inventory));
+            }
+
+            showPurchaseNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'purchase-notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                // Trigger animation
+                setTimeout(() => notification.classList.add('show'), 100);
+                
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            animateElements() {
+                // Animate title
+                Splitting();
+                
+                anime({
+                    targets: '.page-title .char',
+                    translateY: [-50, 0],
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 1200,
+                    delay: (el, i) => 100 + 30 * i
+                });
+
+                // Animate currency display
+                anime({
+                    targets: '.currency-display',
+                    scale: [0.8, 1],
+                    opacity: [0, 1],
+                    easing: 'easeOutBack',
+                    duration: 800,
+                    delay: 500
+                });
+            }
+        }
+
+        // Global functions for special offers
+        function purchaseOffer(offerType) {
+            const offers = {
+                starter: { cost: 80, items: ['extra-burn', 'mic-drop', 'extra-line'] },
+                savage: { cost: 350, items: ['divider', 'judge-bias', 'reverse-roast', 'mic-drop'] },
+                ultimate: { cost: 600, items: ['savage-roast-mode'] }
+            };
+
+            const offer = offers[offerType];
+            if (!offer || shopPage.roastbucks < offer.cost) return;
+
+            // Deduct roastbucks
+            shopPage.roastbucks -= offer.cost;
+            
+            // Add items to inventory
+            offer.items.forEach(itemId => {
+                shopPage.inventory[itemId] = (shopPage.inventory[itemId] || 0) + 1;
+            });
+            
+            // Save and update
+            shopPage.savePlayerData();
+            document.getElementById('roastbucks-amount').textContent = shopPage.roastbucks.toLocaleString();
+            shopPage.updateInventory();
+            
+            // Show notification
+            shopPage.showPurchaseNotification(`Purchased ${offerType} pack!`);
+        }
+
+        // Initialize shop page
+        let shopPage;
+        document.addEventListener('DOMContentLoaded', function() {
+            shopPage = new ShopPage();
+            
+            // Initialize background animation
+            if (typeof p5 !== 'undefined') {
+                new p5((p) => {
+                    let particles = [];
+                    
+                    p.setup = () => {
+                        const canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                        canvas.parent('background-canvas');
+                        canvas.style('position', 'fixed');
+                        canvas.style('top', '0');
+                        canvas.style('left', '0');
+                        canvas.style('z-index', '-1');
+                        
+                        for (let i = 0; i < 50; i++) {
+                            particles.push({
+                                x: p.random(p.width),
+                                y: p.random(p.height),
+                                size: p.random(2, 6),
+                                speedX: p.random(-1, 1),
+                                speedY: p.random(-1, 1),
+                                opacity: p.random(0.2, 0.7),
+                                color: p.random(['orange', 'blue', 'green'])
+                            });
+                        }
+                    };
+                    
+                    p.draw = () => {
+                        p.clear();
+                        
+                        particles.forEach(particle => {
+                            if (particle.color === 'orange') {
+                                p.fill(255, 107, 53, particle.opacity * 255);
+                            } else if (particle.color === 'blue') {
+                                p.fill(0, 212, 255, particle.opacity * 255);
+                            } else {
+                                p.fill(57, 255, 20, particle.opacity * 255);
+                            }
+                            p.noStroke();
+                            p.circle(particle.x, particle.y, particle.size);
+                            
+                            particle.x += particle.speedX;
+                            particle.y += particle.speedY;
+                            
+                            if (particle.x < 0 || particle.x > p.width) particle.speedX *= -1;
+                            if (particle.y < 0 || particle.y > p.height) particle.speedY *= -1;
+                        });
+                    };
+                    
+                    p.windowResized = () => {
+                        p.resizeCanvas(p.windowWidth, p.windowHeight);
+                    };
+                });
+            }
+        });
+    </script>
+</body>
+</html>
