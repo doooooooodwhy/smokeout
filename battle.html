@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Arena - Smokeout</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://unpkg.com/splitting@1.0.6/dist/splitting.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/splitting@1.0.6/dist/splitting.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;400;700&family=Inter:wght@300;400;500;600;700&family=Russo+One&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a1a1a;
+            color: #f5f5f5;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 2rem;
+            z-index: 1000;
+            border-bottom: 2px solid #ff6b35;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #ff6b35;
+        }
+
+        .game-info {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .game-mode {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .round-info {
+            color: #999;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #f5f5f5;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #ff6b35;
+        }
+
+        /* Battle Container */
+        .battle-container {
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+            display: grid;
+            grid-template-columns: 1fr 300px 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap: 1px;
+            background: #333;
+        }
+
+        /* Battle Header */
+        .battle-header {
+            grid-column: 1 / -1;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ff6b35;
+        }
+
+        .timer-container {
+            text-align: center;
+        }
+
+        .timer {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ff6b35;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+        }
+
+        .timer.warning {
+            color: #ff073a;
+            animation: pulse 1s infinite;
+        }
+
+        .turn-indicator {
+            color: #00d4ff;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .battle-stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: #ff6b35;
+            display: block;
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 0.8rem;
+        }
+
+        /* Team Areas */
+        .team-area {
+            background: rgba(26, 26, 26, 0.8);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 500px;
+        }
+
+        .team-area.team-left {
+            border-right: 2px solid #00d4ff;
+        }
+
+        .team-area.team-right {
+            border-left: 2px solid #39ff14;
+        }
+
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #333;
+        }
+
+        .team-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .team-left .team-name {
+            color: #00d4ff;
+        }
+
+        .team-right .team-name {
+            color: #39ff14;
+        }
+
+        .team-score {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 900;
+        }
+
+        .team-players {
+            margin-bottom: 2rem;
+        }
+
+        .player-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid;
+        }
+
+        .team-left .player-card {
+            border-left-color: #00d4ff;
+        }
+
+        .team-right .player-card {
+            border-left-color: #39ff14;
+        }
+
+        .player-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .team-left .player-name {
+            color: #00d4ff;
+        }
+
+        .team-right .player-name {
+            color: #39ff14;
+        }
+
+        .player-status {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        /* Roast History */
+        .roast-history {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 400px;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .roast-message {
+            background: rgba(255, 107, 53, 0.1);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid #ff6b35;
+        }
+
+        .roast-message.own {
+            background: rgba(0, 212, 255, 0.1);
+            border-left-color: #00d4ff;
+            margin-left: 2rem;
+        }
+
+        .roast-message.opponent {
+            background: rgba(57, 255, 20, 0.1);
+            border-left-color: #39ff14;
+            margin-right: 2rem;
+        }
+
+        .roast-author {
+            font-weight: 600;
+            color: #ff6b35;
+            margin-bottom: 0.5rem;
+        }
+
+        .roast-content {
+            font-family: 'Roboto Mono', monospace;
+            line-height: 1.5;
+            color: #f5f5f5;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: rgba(26, 26, 26, 0.9);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .power-ups-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 2px solid #ff6b35;
+        }
+
+        .section-title {
+            font-family: 'Russo One', sans-serif;
+            font-size: 1.2rem;
+            color: #ff6b35;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .power-ups-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .powerup-button {
+            background: rgba(255, 107, 53, 0.2);
+            border: 1px solid #ff6b35;
+            color: #f5f5f5;
+            padding: 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .powerup-button:hover {
+            background: rgba(255, 107, 53, 0.4);
+            transform: scale(1.05);
+        }
+
+        .powerup-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .powerup-cost {
+            display: block;
+            font-size: 0.7rem;
+            color: #ff6b35;
+            margin-top: 0.2rem;
+        }
+
+        /* Input Section */
+        .input-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 2px solid #00d4ff;
+        }
+
+        .roast-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .roast-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #333;
+            color: #f5f5f5;
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s ease;
+        }
+
+        .roast-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .input-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .character-count {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .send-button {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Battle Footer */
+        .battle-footer {
+            grid-column: 1 / -1;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 2px solid #ff6b35;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .player-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b35, #00d4ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+        }
+
+        .player-details h4 {
+            color: #00d4ff;
+            margin-bottom: 0.2rem;
+        }
+
+        .player-level {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        /* Judge Panel */
+        .judge-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(26, 26, 26, 0.95);
+            border: 3px solid #ff6b35;
+            border-radius: 20px;
+            padding: 2rem;
+            z-index: 2000;
+            display: none;
+            text-align: center;
+            min-width: 400px;
+        }
+
+        .judge-panel.active {
+            display: block;
+        }
+
+        .judge-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ff6b35;
+            margin-bottom: 1rem;
+        }
+
+        .judge-timer {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 900;
+            color: #ff073a;
+            margin-bottom: 2rem;
+        }
+
+        .judge-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+        }
+
+        .judge-vote {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .vote-team1 {
+            background: #00d4ff;
+            color: white;
+        }
+
+        .vote-team2 {
+            background: #39ff14;
+            color: #1a1a1a;
+        }
+
+        .judge-vote:hover {
+            transform: scale(1.1);
+        }
+
+        /* Power-up Notifications */
+        .powerup-notification {
+            position: fixed;
+            top: 100px;
+            right: 2rem;
+            background: rgba(255, 107, 53, 0.9);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            z-index: 1500;
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .levelup-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 212, 255, 0.9);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            z-index: 2000;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .battle-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr auto auto;
+            }
+            
+            .team-area {
+                min-height: 300px;
+            }
+            
+            .roast-history {
+                max-height: 200px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .battle-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .battle-stats {
+                gap: 1rem;
+            }
+            
+            .power-ups-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-controls {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+            
+            .judge-panel {
+                min-width: 90%;
+                margin: 0 5%;
+            }
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Background Canvas */
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0.2;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <!-- Background Canvas -->
+    <div id="background-canvas"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">SMOKEOUT</div>
+            <div class="game-info">
+                <span class="game-mode" id="current-game-mode">1v1 Judge</span>
+                <span class="round-info">Round <span id="current-round">1</span></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="shop.html">Shop</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Battle Container -->
+    <div class="battle-container">
+        <!-- Battle Header -->
+        <div class="battle-header">
+            <div class="turn-indicator">
+                <span id="current-player">Player 1</span>'s Turn
+            </div>
+            <div class="timer-container">
+                <div class="timer" id="timer">1:30</div>
+            </div>
+            <div class="battle-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="roastbucks">0</span>
+                    <span class="stat-label">Roastbucks</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="level">1</span>
+                    <span class="stat-label">Level</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="total-roasts">0</span>
+                    <span class="stat-label">Roasts</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Left -->
+        <div class="team-area team-left">
+            <div class="team-header">
+                <h2 class="team-name">Team A</h2>
+                <div class="team-score" id="team1-score">0</div>
+            </div>
+            
+            <div class="team-players" id="team1-players">
+                <div class="player-card">
+                    <div class="player-name">Player 1</div>
+                    <div class="player-status">Ready to Roast</div>
+                </div>
+            </div>
+            
+            <div class="roast-history" id="team1-roasts">
+                <div class="roast-message opponent">
+                    <div class="roast-author">Opponent</div>
+                    <div class="roast-content">Waiting for battle to begin...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <!-- Power-ups Section -->
+            <div class="power-ups-section">
+                <h3 class="section-title">Power-ups</h3>
+                <div class="power-ups-grid">
+                    <button class="powerup-button" data-powerup="extra-burn">
+                        Extra Burn
+                        <span class="powerup-cost">50 RB</span>
+                    </button>
+                    <button class="powerup-button" data-powerup="mic-drop">
+                        Mic Drop
+                        <span class="powerup-cost">30 RB</span>
+                    </button>
+                    <button class="powerup-button" data-powerup="extra-line">
+                        Extra Line
+                        <span class="powerup-cost">30 RB</span>
+                    </button>
+                    <button class="powerup-button" data-powerup="divider">
+                        Divider
+                        <span class="powerup-cost">65 RB</span>
+                    </button>
+                    <button class="powerup-button" data-powerup="judge-bias">
+                        Judge Bias
+                        <span class="powerup-cost">45 RB</span>
+                    </button>
+                    <button class="powerup-button" data-powerup="reverse-roast">
+                        Reverse Roast
+                        <span class="powerup-cost">20 RB</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Input Section -->
+            <div class="input-section">
+                <h3 class="section-title">Craft Your Roast</h3>
+                <form class="roast-form" id="roast-form">
+                    <textarea 
+                        class="roast-input" 
+                        id="roast-input" 
+                        placeholder="Type your devastating roast here..."
+                        maxlength="500"
+                    ></textarea>
+                    <div class="input-controls">
+                        <span class="character-count" id="char-count">0/500</span>
+                        <button type="submit" class="send-button" id="send-button">Send Roast 🔥</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Team Right -->
+        <div class="team-area team-right">
+            <div class="team-header">
+                <h2 class="team-name">Team B</h2>
+                <div class="team-score" id="team2-score">0</div>
+            </div>
+            
+            <div class="team-players" id="team2-players">
+                <div class="player-card">
+                    <div class="player-name">Player 2</div>
+                    <div class="player-status">Ready to Roast</div>
+                </div>
+            </div>
+            
+            <div class="roast-history" id="team2-roasts">
+                <div class="roast-message own">
+                    <div class="roast-author">You</div>
+                    <div class="roast-content">Battle starting soon...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Battle Footer -->
+        <div class="battle-footer">
+            <div class="player-info">
+                <div class="player-avatar">P1</div>
+                <div class="player-details">
+                    <h4 id="player-name">Player 1</h4>
+                    <div class="player-level">Level <span id="player-level">1</span></div>
+                </div>
+            </div>
+            <div class="battle-status">
+                <span id="battle-status">Battle in Progress</span>
+            </div>
+            <div class="player-info">
+                <div class="player-avatar" style="background: linear-gradient(45deg, #39ff14, #00d4ff);">P2</div>
+                <div class="player-details">
+                    <h4>Opponent</h4>
+                    <div class="player-level">Ready</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Judge Panel -->
+    <div class="judge-panel" id="judge-panel">
+        <h2 class="judge-title">Judge Voting</h2>
+        <div class="judge-timer" id="intermission-timer">15</div>
+        <p>Cast your vote for the winner of this round!</p>
+        <div class="judge-buttons">
+            <button class="judge-vote vote-team1" id="vote-team1">Team A</button>
+            <button class="judge-vote vote-team2" id="vote-team2">Team B</button>
+        </div>
+    </div>
+
+    <!-- Main JavaScript -->
+    <script src="main.js"></script>
+    
+    <script>
+        // Battle page specific functionality
+        class BattlePage {
+            constructor() {
+                this.gameMode = localStorage.getItem('selected-game-mode') || '1v1-judge';
+                this.currentTeam = 1;
+                this.currentPlayerIndex = 0;
+                this.roastHistory = [];
+                this.initializeBattle();
+            }
+
+            initializeBattle() {
+                this.setupGameMode();
+                this.setupEventListeners();
+                this.startBattle();
+                this.updateUI();
+            }
+
+            setupGameMode() {
+                const modeElement = document.getElementById('current-game-mode');
+                const modeNames = {
+                    '1v1-judge': '1v1 Judge',
+                    '1v1-no-judge': '1v1 No Judge',
+                    '2v2': '2v2 Battle',
+                    '3v3': '3v3 War',
+                    '4v4': '4v4 Championship'
+                };
+                modeElement.textContent = modeNames[this.gameMode] || '1v1 Judge';
+
+                // Setup teams based on mode
+                this.setupTeams();
+            }
+
+            setupTeams() {
+                const teamSizes = {
+                    '1v1-judge': 1,
+                    '1v1-no-judge': 1,
+                    '2v2': 2,
+                    '3v3': 3,
+                    '4v4': 4
+                };
+
+                const teamSize = teamSizes[this.gameMode] || 1;
+                this.createTeamPlayers('team1-players', 'Team A', teamSize);
+                this.createTeamPlayers('team2-players', 'Team B', teamSize);
+            }
+
+            createTeamPlayers(containerId, teamName, count) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '';
+
+                for (let i = 1; i <= count; i++) {
+                    const playerCard = document.createElement('div');
+                    playerCard.className = 'player-card';
+                    playerCard.innerHTML = `
+                        <div class="player-name">${teamName} Player ${i}</div>
+                        <div class="player-status">Ready to Roast</div>
+                    `;
+                    container.appendChild(playerCard);
+                }
+            }
+
+            setupEventListeners() {
+                // Roast form submission
+                const roastForm = document.getElementById('roast-form');
+                roastForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.submitRoast();
+                });
+
+                // Character counter
+                const roastInput = document.getElementById('roast-input');
+                const charCount = document.getElementById('char-count');
+                roastInput.addEventListener('input', () => {
+                    const count = roastInput.value.length;
+                    charCount.textContent = `${count}/500`;
+                    charCount.style.color = count > 450 ? '#ff073a' : '#999';
+                });
+
+                // Power-up buttons
+                document.querySelectorAll('.powerup-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const powerUpId = e.target.dataset.powerup;
+                        this.activatePowerUp(powerUpId);
+                    });
+                });
+
+                // Judge vote buttons
+                document.getElementById('vote-team1').addEventListener('click', () => {
+                    this.castJudgeVote(1);
+                });
+                document.getElementById('vote-team2').addEventListener('click', () => {
+                    this.castJudgeVote(2);
+                });
+            }
+
+            startBattle() {
+                this.startTurn();
+            }
+
+            startTurn() {
+                // Reset timer
+                this.timeLeft = 90;
+                this.updateTimer();
+                
+                // Start countdown
+                this.timer = setInterval(() => {
+                    this.timeLeft--;
+                    this.updateTimer();
+                    
+                    if (this.timeLeft <= 0) {
+                        this.endTurn();
+                    }
+                }, 1000);
+
+                // Update turn indicator
+                this.updateTurnIndicator();
+            }
+
+            endTurn() {
+                clearInterval(this.timer);
+                this.switchPlayer();
+                
+                // Check if round is complete
+                if (this.roundComplete()) {
+                    this.startIntermission();
+                } else {
+                    this.startTurn();
+                }
+            }
+
+            switchPlayer() {
+                this.currentTeam = this.currentTeam === 1 ? 2 : 1;
+                this.updateTurnIndicator();
+            }
+
+            roundComplete() {
+                // Simplified logic - end round after 4 turns
+                return this.roastHistory.length >= 4;
+            }
+
+            startIntermission() {
+                const judgePanel = document.getElementById('judge-panel');
+                judgePanel.classList.add('active');
+                
+                let intermissionTime = 15;
+                const intermissionTimer = setInterval(() => {
+                    intermissionTime--;
+                    document.getElementById('intermission-timer').textContent = intermissionTime;
+                    
+                    if (intermissionTime <= 0) {
+                        clearInterval(intermissionTimer);
+                        this.endIntermission();
+                    }
+                }, 1000);
+            }
+
+            endIntermission() {
+                document.getElementById('judge-panel').classList.remove('active');
+                this.determineRoundWinner();
+                this.nextRound();
+            }
+
+            submitRoast() {
+                const input = document.getElementById('roast-input');
+                const message = input.value.trim();
+                
+                if (!message) return;
+
+                // Add to roast history
+                const roast = {
+                    player: this.getCurrentPlayerName(),
+                    message: message,
+                    team: this.currentTeam,
+                    timestamp: Date.now()
+                };
+                
+                this.roastHistory.push(roast);
+                this.displayRoast(roast);
+                
+                // Award roastbucks
+                this.awardRoastbucks(1);
+                
+                // Clear input
+                input.value = '';
+                document.getElementById('char-count').textContent = '0/500';
+                
+                // End turn
+                this.endTurn();
+            }
+
+            displayRoast(roast) {
+                const historyContainer = this.currentTeam === 1 ? 
+                    document.getElementById('team2-roasts') : 
+                    document.getElementById('team1-roasts');
+
+                const roastElement = document.createElement('div');
+                roastElement.className = `roast-message ${roast.team === 1 ? 'own' : 'opponent'}`;
+                roastElement.innerHTML = `
+                    <div class="roast-author">${roast.player}</div>
+                    <div class="roast-content typed-text"></div>
+                `;
+                
+                historyContainer.appendChild(roastElement);
+                
+                // Typewriter effect
+                new Typed(roastElement.querySelector('.typed-text'), {
+                    strings: [roast.message],
+                    typeSpeed: 30,
+                    showCursor: false
+                });
+
+                // Scroll to bottom
+                historyContainer.scrollTop = historyContainer.scrollHeight;
+            }
+
+            activatePowerUp(powerUpId) {
+                // Simulate power-up activation
+                const powerUpNames = {
+                    'extra-burn': 'Extra Burn',
+                    'mic-drop': 'Mic Drop',
+                    'extra-line': 'Extra Line',
+                    'divider': 'Divider',
+                    'judge-bias': 'Judge Bias',
+                    'reverse-roast': 'Reverse Roast'
+                };
+
+                const name = powerUpNames[powerUpId];
+                if (name) {
+                    this.showPowerUpActivation(name);
+                }
+            }
+
+            castJudgeVote(team) {
+                // Simulate judge voting
+                console.log(`Vote cast for Team ${team}`);
+                document.getElementById('judge-panel').classList.remove('active');
+            }
+
+            determineRoundWinner() {
+                // Simplified winner determination
+                const winner = Math.random() > 0.5 ? 1 : 2;
+                const teamScore = document.getElementById(`team${winner}-score`);
+                const currentScore = parseInt(teamScore.textContent);
+                teamScore.textContent = currentScore + 1;
+                
+                this.showNotification(`Team ${winner === 1 ? 'A' : 'B'} wins the round!`);
+            }
+
+            nextRound() {
+                const roundElement = document.getElementById('current-round');
+                const currentRound = parseInt(roundElement.textContent);
+                roundElement.textContent = currentRound + 1;
+                
+                // Reset for next round
+                this.roastHistory = [];
+                this.startBattle();
+            }
+
+            updateTimer() {
+                const minutes = Math.floor(this.timeLeft / 60);
+                const seconds = this.timeLeft % 60;
+                const display = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                const timerElement = document.getElementById('timer');
+                timerElement.textContent = display;
+                timerElement.className = this.timeLeft <= 10 ? 'timer warning' : 'timer';
+            }
+
+            updateTurnIndicator() {
+                const currentPlayerElement = document.getElementById('current-player');
+                const playerName = this.getCurrentPlayerName();
+                currentPlayerElement.textContent = playerName;
+            }
+
+            getCurrentPlayerName() {
+                const teamName = this.currentTeam === 1 ? 'Team A' : 'Team B';
+                return `${teamName} Player ${this.currentPlayerIndex + 1}`;
+            }
+
+            awardRoastbucks(amount) {
+                // Update UI
+                const roastbucksElement = document.getElementById('roastbucks');
+                const currentRoastbucks = parseInt(roastbucksElement.textContent);
+                roastbucksElement.textContent = currentRoastbucks + amount;
+                
+                // Save to localStorage
+                const playerData = JSON.parse(localStorage.getItem('smokeout-player-data') || '{}');
+                playerData.roastbucks = (playerData.roastbucks || 0) + amount;
+                playerData.totalRoasts = (playerData.totalRoasts || 0) + 1;
+                localStorage.setItem('smokeout-player-data', JSON.stringify(playerData));
+            }
+
+            showPowerUpActivation(name) {
+                const notification = document.createElement('div');
+                notification.className = 'powerup-notification';
+                notification.textContent = `${name} Activated!`;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => notification.remove(), 2000);
+            }
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'levelup-notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => notification.remove(), 3000);
+            }
+
+            updateUI() {
+                // Load and display player stats
+                const playerData = JSON.parse(localStorage.getItem('smokeout-player-data') || '{}');
+                
+                document.getElementById('roastbucks').textContent = playerData.roastbucks || 0;
+                document.getElementById('level').textContent = playerData.level || 1;
+                document.getElementById('total-roasts').textContent = playerData.totalRoasts || 0;
+                document.getElementById('player-level').textContent = playerData.level || 1;
+            }
+        }
+
+        // Initialize battle page
+        document.addEventListener('DOMContentLoaded', function() {
+            const battlePage = new BattlePage();
+            
+            // Initialize background animation
+            if (typeof p5 !== 'undefined') {
+                new p5((p) => {
+                    let particles = [];
+                    
+                    p.setup = () => {
+                        const canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                        canvas.parent('background-canvas');
+                        canvas.style('position', 'fixed');
+                        canvas.style('top', '0');
+                        canvas.style('left', '0');
+                        canvas.style('z-index', '-1');
+                        
+                        for (let i = 0; i < 30; i++) {
+                            particles.push({
+                                x: p.random(p.width),
+                                y: p.random(p.height),
+                                size: p.random(1, 4),
+                                speedX: p.random(-0.5, 0.5),
+                                speedY: p.random(-0.5, 0.5),
+                                opacity: p.random(0.1, 0.5)
+                            });
+                        }
+                    };
+                    
+                    p.draw = () => {
+                        p.clear();
+                        
+                        particles.forEach(particle => {
+                            p.fill(255, 107, 53, particle.opacity * 255);
+                            p.noStroke();
+                            p.circle(particle.x, particle.y, particle.size);
+                            
+                            particle.x += particle.speedX;
+                            particle.y += particle.speedY;
+                            
+                            if (particle.x < 0 || particle.x > p.width) particle.speedX *= -1;
+                            if (particle.y < 0 || particle.y > p.height) particle.speedY *= -1;
+                        });
+                    };
+                    
+                    p.windowResized = () => {
+                        p.resizeCanvas(p.windowWidth, p.windowHeight);
+                    };
+                });
+            }
+        });
+    </script>
+</body>
+</html>
